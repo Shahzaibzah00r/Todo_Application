@@ -1,11 +1,51 @@
 const Admin = require("../Model/adminModal");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 const mongoose = require("mongoose");
 const jwtSecret = "mynameisShahzaib";
 const bcrypt = require("bcrypt");
 const path = require("path");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
+
+const loginGoogle = async (req, res) => {
+  try {
+    const userInfo = await axios.get(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      { headers: { Authorization: `Bearer ${req.headers.authorization}` } }
+    );
+    const newData = await Admin.findOne({ email: userInfo.data.email });
+    if (newData) {
+      const { fName, lName, email, _id, profilePic } = newData;
+      const token = jwt.sign({ _id }, jwtSecret);
+      return res.status(200).json({
+        Message: "The user has been logged in...",
+        userData: { fName, lName, email, token, profilePic },
+      });
+    } else {
+      const regUserGoogle = await Admin.create({
+        fName: userInfo.data.given_name,
+        lName: userInfo.data.family_name,
+        email: userInfo.data.email,
+        password: userInfo.data.sub,
+        cPassword: userInfo.data.sub,
+        profilePic: userInfo.data.picture,
+      });
+      await regUserGoogle.save();
+      const { fName, lName, email, profilePic } = regUserGoogle;
+      return res.status(200).json({
+        Message: "The user has been registered and logged in by google...",
+        userData: { fName, lName, email, profilePic },
+      });
+    }
+  } catch (error) {
+    console.log("exception: ", error);
+    res.status(500).json({
+      statusCode: 500,
+      errorMessage: "couldn't fine headrers in google login",
+    });
+  }
+};
 
 const registerUser = async (req, res) => {
   try {
@@ -27,9 +67,6 @@ const registerUser = async (req, res) => {
         cPassword: hashPass,
       });
       await regUser.save();
-      console.log("hashPass is: ", regUser.id);
-      // const token = jwt.sign({ userId: regUser.id }, "zaib");
-
       return res.status(201).json({
         message: "This user has been registered",
         data: regUser.email,
@@ -41,7 +78,6 @@ const registerUser = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log("exception: ", error);
     res
       .status(500)
       .json({ statusCode: 500, errorMessage: "pass is not match" });
@@ -65,8 +101,6 @@ const loginUser = async (req, res) => {
       const { fName, lName, email, _id, profilePic } = newData;
 
       const token = jwt.sign({ _id }, jwtSecret);
-
-      console.log("token in sign in:", token);
       return res.status(200).json({
         Message: "The user has been logged in...",
         userData: { fName, lName, email, token, profilePic },
@@ -78,7 +112,6 @@ const loginUser = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log("exception: ", error);
     res.status(500).json({ statusCode: 500, errorMessage: error.message });
   }
 };
@@ -86,8 +119,6 @@ const loginUser = async (req, res) => {
 const updateProfle = async (req, res) => {
   try {
     const { fName, lName, email, token } = req.body;
-    // const fileName = req.file.originalname;
-    // console.log("userin varrify:", req.file.originalname);
     const varryToken = jwt.verify(token, jwtSecret);
     const decodeTokenId = varryToken._id;
     if (decodeTokenId) {
@@ -101,8 +132,6 @@ const updateProfle = async (req, res) => {
         const { secure_url } = await cloudinary.uploader.upload(tempPath, {
           resource_type: "auto",
         });
-        // console.log("uploadRst", secure_url);
-        // return secure_url;
 
         await Admin.findByIdAndUpdate(
           {
@@ -114,7 +143,6 @@ const updateProfle = async (req, res) => {
         const { profilePic } = await Admin.findById(
           new mongoose.Types.ObjectId(decodeTokenId)
         );
-        // console.log("dbData Is: ", profilePic);
         return res.status(200).json({
           Message: "The user has been update...",
           userData: { fName, lName, email, token, profilePic },
@@ -130,7 +158,6 @@ const updateProfle = async (req, res) => {
         const { profilePic } = await Admin.findById(
           new mongoose.Types.ObjectId(decodeTokenId)
         );
-        // console.log("dbData Is: ", profilePic);
         return res.status(200).json({
           Message: "The user has been update...",
           userData: { fName, lName, email, token, profilePic },
@@ -144,4 +171,4 @@ const updateProfle = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, updateProfle };
+module.exports = { registerUser, loginUser, updateProfle, loginGoogle };
