@@ -4,7 +4,9 @@ const app = express();
 require("dotenv").configDotenv();
 const cors = require("cors");
 const morgan = require("morgan");
-app.use(cors(), express.json());
+app.use(cors({
+  origin: "https://zaibtodo.netlify.app"
+}), express.json());
 require("./Component/Utils/conn");
 const userRouter = require("./Component/Routes/usersRoutes");
 const registerRoutes = require("./Component/Routes/registerRoutes");
