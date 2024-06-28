@@ -5,7 +5,7 @@ require("dotenv").configDotenv();
 const cors = require("cors");
 const morgan = require("morgan");
 app.use(cors(), express.json());
-// require("./Component/Utils/conn");
+require("./Component/Utils/conn"); added
 const userRouter = require("./Component/Routes/usersRoutes");
 const registerRoutes = require("./Component/Routes/registerRoutes");
 const PORT = process.env.PORT || 5000;
