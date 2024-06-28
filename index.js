@@ -4,10 +4,10 @@ const app = express();
 require("dotenv").configDotenv();
 const cors = require("cors");
 app.use(cors(), express.json());
-require("./Utils/conn");
-const userRouter = require("./Routes/usersRoutes");
-const registerRoutes = require("./Routes/registerRoutes");
-const PORT = process.env.PORT;
+// require("./Component/Utils/conn");
+const userRouter = require("./Component/Routes/usersRoutes");
+const registerRoutes = require("./Component/Routes/registerRoutes");
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, console.log(`Server running no: ${PORT}`));
 
